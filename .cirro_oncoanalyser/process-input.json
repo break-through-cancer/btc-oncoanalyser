@@ -1,0 +1,4 @@
+{
+    "phase": "1",
+    "outdir": "$.params.dataset.s3|/data/"
+}
