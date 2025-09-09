@@ -38,14 +38,19 @@ param_list = ["dna_cram_path","dna_cram_path_normal","rna_bam_path"]
 
 samplesheet = pd.DataFrame(columns=["group_id","subject_id","sample_id","sample_type","sequence_type","filetype","filepath"])
 samplesheet['filepath'] = [item for param in param_list for item in ds.params.get(param)]
+print([item for param in param_list for item in ds.params.get(param)])
+print(samplesheet)
+
 samplesheet['sample_type'] = ['normal' if 'PBMC' in path else 'tumor' for path in samplesheet['filepath']]
 samplesheet['group_id'] = [re.split(r'[._]', path.split('/')[-1])[1] for path in samplesheet['filepath']]
 samplesheet['subject_id'] = samplesheet['group_id']
 samplesheet['sample_id'] = [re.split(r'[._]', path.split('/')[-1])[0] for path in samplesheet['filepath']]
+print(samplesheet)
 
 # this run specifically has cram for dna and bam for rna
 samplesheet['filetype'] = ['cram' if 'cram' in path else 'bam' for path in samplesheet['filepath']]
 samplesheet['sequence_type'] = ['dna' if 'cram' in path else 'rna' for path in samplesheet['filepath']]
+print(samplesheet)
 
 samplesheet.to_csv('samplesheet.csv', index=False)
 ds.add_param("samplesheet", "samplesheet.csv")
