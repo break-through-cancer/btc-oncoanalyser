@@ -1,4 +1,34 @@
 {
-    "form": {},
-    "ui": {}
+  "form": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "title": "Mode",
+        "description": "Pipeline Run Mode",
+        "type": "string",
+        "default": "wgts",
+        "enum": [
+          "targeted",
+          "panel_resource_creation",
+          "wgts"
+        ]
+      },
+      "genome": {
+        "title": "genome",
+        "description": "Reference genome",
+        "type": "string",
+        "pattern": "",
+        "default": "GRCh38_hmf",
+        "enum": [
+          "GRCh38_hmf",
+          "GRCh37_hmf"
+        ]
+      }
+    },
+    "required": [
+      "mode",
+      "genome"
+    ]
+  },
+  "ui": {}
 }
