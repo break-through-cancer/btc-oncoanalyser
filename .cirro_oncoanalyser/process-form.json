@@ -23,6 +23,20 @@
           "GRCh38_hmf",
           "GRCh37_hmf"
         ]
+      },
+      "dna_cram_path": {
+          "description": "DNA Input Cram Files",
+          "title": "dna_cram_path",
+          "type": "string",
+          "pathType": "dataset",
+          "file": "**/GBM1.DFCI4.PBMC.recal.cram||**/GBM1.DFCI4.S1.C4.recal.cram"
+      },
+      "rna_bam_path": {
+          "description": "RNA Input BAM Files",
+          "title": "rna_bam_path",
+          "type": "string",
+          "pathType": "dataset",
+          "file": "**/GBM1_DFCI4_S1_C4.markdup.sorted.bam"
       }
     },
     "required": [

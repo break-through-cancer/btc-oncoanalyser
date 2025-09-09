@@ -2,6 +2,7 @@
 
 from cirro.helpers.preprocess_dataset import PreprocessDataset
 import pandas as pd
+import re
 
 # 1. Get parameters from cirro pipeline call
 ds = PreprocessDataset.from_running()
@@ -17,35 +18,39 @@ ds.logger.info(files.columns)
 ds.logger.info("Checking samplesheet parameter")
 ds.logger.info(ds.samplesheet)
 
-suffix_map = {
-    '.capseg.txt': 'seg_path',
-    '.indel': 'indel_path',
-    '.snp': 'snp_path',
-    '.PP-modes.data.RData': 'rdata_path'
-}
+param_list = ["dna_cram_path","rna_bam_path"]
+# DNA cram files are like this -- data/preprocessing/recalibrated/GBM1.DFCI4.S1.C4/GBM1.DFCI4.S1.C4.recal.cram
+# DNA normal cram are like this -- data/preprocessing/recalibrated/GBM1.DFCI4.PBMC/GBM1.DFCI4.PBMC.recal.cram
+# rna bam files are like this -- data/star_salmon/GBM1_DFCI4_S1_C4.markdup.sorted.bam
 
-def map_path(filename):
-    for suffix, path_type in suffix_map.items():
-        if filename.endswith(suffix):
-            return path_type
-    return None
+# we want to create a samplesheet that looks like this:
+# group_id,subject_id,sample_id,sample_type,sequence_type,filetype,filepath
+# PATIENT1,PATIENT1,PATIENT1-N,normal,dna,bam,/path/to/PATIENT1-N.dna.bam
+# PATIENT1,PATIENT1,PATIENT1-T,tumor,dna,bam,/path/to/PATIENT1-T.dna.bam
+# PATIENT1,PATIENT1,PATIENT1-T-RNA,tumor,rna,bam,/path/to/PATIENT1-T.rna.bam
 
-files['path_type'] = files['file'].apply(map_path)
+# group id and subject id are the same and they should be whatever comes after GBM1
+# sample id is what comes after subject id
+# sample type is normal for PBMC and tumor for everything else
+# sequence type is dna for cram files and rna for bam files
+# filetype is cram for cram files and bam for bam files
+# filepath is the full path to the file which we canb get by doing ds.params.get('dna_cram_path') or ds.params.get('rna_bam_path')
 
-result = (
-    files.pivot(index='sample', columns='path_type', values='file')
-         .rename_axis(columns=None)
-         .reset_index()
-)
-samplesheet = pd.merge(ds.samplesheet, result, on='sample')
+samplesheet = pd.DataFrame(columns=["group_id","subject_id","sample_id","sample_type","sequence_type","filetype","filepath"])
+samplesheet['filepath'] = [item for param in param_list for item in ds.params.get(param)]
+samplesheet['sample_type'] = ['normal' if 'PBMC' in path else 'tumor' for path in samplesheet['filepath']]
+samplesheet['group_id'] = [re.split(r'[._]', path.split('/')[-1])[1] for path in samplesheet['filepath']]
+samplesheet['subject_id'] = samplesheet['group_id']
+samplesheet['sample_id'] = [re.split(r'[._]', path.split('/')[-1])[0] for path in samplesheet['filepath']]
 
-param_list = ["sample", "seg_path", "indel_path", "snp_path"]
-samplesheet = samplesheet[param_list]
-
-ds.logger.info("Print resulting samplesheet:")
-ds.logger.info(samplesheet)
+# this run specifically has cram for dna and bam for rna
+samplesheet['filetype'] = ['cram' if 'cram' in path else 'bam' for path in samplesheet['filepath']]
+samplesheet['sequence_type'] = ['dna' if 'cram' in path else 'rna' for path in samplesheet['filepath']]
 
 samplesheet.to_csv('samplesheet.csv', index=False)
 ds.add_param("samplesheet", "samplesheet.csv")
+
+for key in param_list:  # list() avoids modifying during iteration
+    ds.remove_param(key, force=True)
 
 ds.logger.info(ds.params)
