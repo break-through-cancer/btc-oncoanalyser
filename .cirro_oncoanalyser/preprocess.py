@@ -18,7 +18,7 @@ ds.logger.info(files.columns)
 ds.logger.info("Checking samplesheet parameter")
 ds.logger.info(ds.samplesheet)
 
-param_list = ["dna_cram_path","rna_bam_path"]
+param_list = ["dna_cram_path","dna_cram_path_normal","rna_bam_path"]
 # DNA cram files are like this -- data/preprocessing/recalibrated/GBM1.DFCI4.S1.C4/GBM1.DFCI4.S1.C4.recal.cram
 # DNA normal cram are like this -- data/preprocessing/recalibrated/GBM1.DFCI4.PBMC/GBM1.DFCI4.PBMC.recal.cram
 # rna bam files are like this -- data/star_salmon/GBM1_DFCI4_S1_C4.markdup.sorted.bam

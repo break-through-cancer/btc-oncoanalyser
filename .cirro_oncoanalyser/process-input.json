@@ -3,5 +3,6 @@
   "mode": "$.dataset.params.mode",
   "genome": "$.dataset.params.genome",
   "dna_cram_path": "$.dataset.params.dna_cram_path",
+  "dna_cram_path_normal": "$.dataset.params.dna_cram_path_normal",
   "rna_bam_path": "$.dataset.params.rna_bam_path"
 }
