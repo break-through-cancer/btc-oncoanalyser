@@ -29,14 +29,14 @@
           "title": "dna_cram_path",
           "type": "string",
           "pathType": "dataset",
-          "file": "**/GBM1.DFCI4.S1.C4.md.cram"
+          "file": "**/GBM1.DFCI4.S1.C4.sorted.bam"
       },
       "dna_cram_path_normal": {
           "description": "DNA Input Cram Files - Normal",
           "title": "dna_cram_path_normal",
           "type": "string",
           "pathType": "dataset",
-          "file": "**/GBM1.DFCI4.PBMC.md.cram"
+          "file": "**/GBM1.DFCI4.PBMC.sorted.bam"
       },
       "rna_bam_path": {
           "description": "RNA Input BAM Files",
