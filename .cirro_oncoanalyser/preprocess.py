@@ -2,6 +2,7 @@
 
 from cirro.helpers.preprocess_dataset import PreprocessDataset
 import pandas as pd
+import numpy as np
 import re
 
 # 1. Get parameters from cirro pipeline call
@@ -37,8 +38,8 @@ param_list = ["dna_cram_path","dna_cram_path_normal","rna_bam_path"]
 # filepath is the full path to the file which we canb get by doing ds.params.get('dna_cram_path') or ds.params.get('rna_bam_path')
 
 samplesheet = pd.DataFrame(columns=["group_id","subject_id","sample_id","sample_type","sequence_type","filetype","filepath"])
-samplesheet['filepath'] = [item for param in param_list for item in ds.params.get(param)]
-print([item for param in param_list for item in ds.params.get(param)])
+samplesheet['filepath'] = np.array([ds.params.get(param) for param in param_list]).flatten()
+print(np.array([ds.params.get(param) for param in param_list]).flatten())
 print(samplesheet)
 
 samplesheet['sample_type'] = ['normal' if 'PBMC' in path else 'tumor' for path in samplesheet['filepath']]
