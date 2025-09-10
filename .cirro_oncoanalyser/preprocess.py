@@ -54,7 +54,7 @@ samplesheet['sequence_type'] = ['dna' if 'cram' in path else 'rna' for path in s
 print(samplesheet)
 
 samplesheet.to_csv('samplesheet.csv', index=False)
-ds.add_param("samplesheet", "samplesheet.csv")
+ds.add_param("input", "samplesheet.csv")
 
 for key in param_list:  # list() avoids modifying during iteration
     ds.remove_param(key, force=True)
