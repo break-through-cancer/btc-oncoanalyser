@@ -39,18 +39,26 @@ param_list = ["dna_cram_path","dna_cram_path_normal","rna_bam_path"]
 
 samplesheet = pd.DataFrame(columns=["group_id","subject_id","sample_id","sample_type","sequence_type","filetype","filepath"])
 samplesheet['filepath'] = np.array([ds.params.get(param) for param in param_list]).flatten()
-print(np.array([ds.params.get(param) for param in param_list]).flatten())
-print(samplesheet)
+# for debugging
+# samplesheet['filepath'] = [
+#     "s3://project-e4f45b6a-e2b0-4ddb-a1d5-b276c414af05/datasets/84421354-4c4a-4c30-8fed-a2710c88784d/data/preprocessing/recalibrated/GBM1.DFCI4.S1.C4/GBM1.DFCI4.S1.C4.recal.cram",
+#     "s3://project-e4f45b6a-e2b0-4ddb-a1d5-b276c414af05/datasets/84421354-4c4a-4c30-8fed-a2710c88784d/data/preprocessing/recalibrated/GBM1.DFCI4.PBMC/GBM1.DFCI4.PBMC.recal.cram",
+#     "s3://project-e4f45b6a-e2b0-4ddb-a1d5-b276c414af05/datasets/55438e27-a6f1-4222-9dd6-7f899d6a8ef0/data/star_salmon/GBM1_DFCI4_S1_C4.markdup.sorted.bam"
+# ]
 
 samplesheet['sample_type'] = ['normal' if 'PBMC' in path else 'tumor' for path in samplesheet['filepath']]
 samplesheet['group_id'] = [re.split(r'[._]', path.split('/')[-1])[1] for path in samplesheet['filepath']]
 samplesheet['subject_id'] = samplesheet['group_id']
-samplesheet['sample_id'] = [re.split(r'[._]', path.split('/')[-1])[0] for path in samplesheet['filepath']]
-print(samplesheet)
+samplesheet['sample_id'] = [re.split(r'[._]', path.split('/')[-1])[2] for path in samplesheet['filepath']]
 
 # this run specifically has cram for dna and bam for rna
 samplesheet['filetype'] = ['cram' if 'cram' in path else 'bam' for path in samplesheet['filepath']]
 samplesheet['sequence_type'] = ['dna' if 'cram' in path else 'rna' for path in samplesheet['filepath']]
+
+# add -RNA to sample id for rows that are rna
+samplesheet.loc[samplesheet['sequence_type'] == 'rna', 'sample_id'] = samplesheet['sample_id'] + '-RNA'
+
+pd.set_option('display.max_columns', None)
 print(samplesheet)
 
 samplesheet.to_csv('samplesheet.csv', index=False)
