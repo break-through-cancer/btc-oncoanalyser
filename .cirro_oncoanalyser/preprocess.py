@@ -19,45 +19,40 @@ ds.logger.info(files.columns)
 ds.logger.info("Checking samplesheet parameter")
 ds.logger.info(ds.samplesheet)
 
-param_list = ["dna_cram_path","dna_cram_path_normal","rna_bam_path"]
-# DNA cram files are like this -- data/preprocessing/recalibrated/GBM1.DFCI4.S1.C4/GBM1.DFCI4.S1.C4.recal.cram
-# DNA normal cram are like this -- data/preprocessing/recalibrated/GBM1.DFCI4.PBMC/GBM1.DFCI4.PBMC.recal.cram
-# rna bam files are like this -- data/star_salmon/GBM1_DFCI4_S1_C4.markdup.sorted.bam
 
-# we want to create a samplesheet that looks like this:
-# group_id,subject_id,sample_id,sample_type,sequence_type,filetype,filepath
-# PATIENT1,PATIENT1,PATIENT1-N,normal,dna,bam,/path/to/PATIENT1-N.dna.bam
-# PATIENT1,PATIENT1,PATIENT1-T,tumor,dna,bam,/path/to/PATIENT1-T.dna.bam
-# PATIENT1,PATIENT1,PATIENT1-T-RNA,tumor,rna,bam,/path/to/PATIENT1-T.rna.bam
+# we want to create a samplesheet that looks like this for the fastq entry
+# group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath
+# PATIENT1,PATIENT1,PATIENT1-T,tumor,dna,fastq,library_id:S1;lane:001,/path/to/PATIENT1-T_S1_L001_R1_001.fastq.gz;/path/to/PATIENT1-T_S1_L001_R2_001.fastq.gz
+# PATIENT1,PATIENT1,PATIENT1-N,normal,dna,fastq,library_id:S1;lane:002,/path/to/PATIENT1-T_S1_L002_R1_001.fastq.gz;/path/to/PATIENT1-T_S1_L002_R2_001.fastq.gz
+# PATIENT1,PATIENT1,PATIENT1-T-RNA,tumor,rna,fastq,library_id:S1;lane:002,/path/to/PATIENT1-T_S1_L002_R1_001.fastq.gz;/path/to/PATIENT1-T_S1_L002_R2_001.fastq.gz
 
+# sample id comes from ds.samplesheet['sample'] but with _ replaced with .
 # group id and subject id are the same and they should be whatever comes after GBM1
-# sample id is what comes after subject id
 # sample type is normal for PBMC and tumor for everything else
-# sequence type is dna for cram files and rna for bam files
-# filetype is cram for cram files and bam for bam files
-# filepath is the full path to the file which we canb get by doing ds.params.get('dna_cram_path') or ds.params.get('rna_bam_path')
+# filetype is fastq
+# sequence type dna if fastq filename contains "merged" -- THIS IS HARDCODED BUT NOT ALWAYS TRUE FOR OTHER RUNS
+# filepath is the concatenation of fastq_1 and fastq_2 with a ; in between
+# there is not library ID or lane information in ds.samplesheet so we will just use row index instead so every sample is unique
 
-samplesheet = pd.DataFrame(columns=["group_id","subject_id","sample_id","sample_type","sequence_type","filetype","filepath"])
-samplesheet['filepath'] = np.array([ds.params.get(param) for param in param_list]).flatten()
-# for debugging
-# samplesheet['filepath'] = [
-#     "s3://project-e4f45b6a-e2b0-4ddb-a1d5-b276c414af05/datasets/84421354-4c4a-4c30-8fed-a2710c88784d/data/preprocessing/recalibrated/GBM1.DFCI4.S1.C4/GBM1.DFCI4.S1.C4.recal.cram",
-#     "s3://project-e4f45b6a-e2b0-4ddb-a1d5-b276c414af05/datasets/84421354-4c4a-4c30-8fed-a2710c88784d/data/preprocessing/recalibrated/GBM1.DFCI4.PBMC/GBM1.DFCI4.PBMC.recal.cram",
-#     "s3://project-e4f45b6a-e2b0-4ddb-a1d5-b276c414af05/datasets/55438e27-a6f1-4222-9dd6-7f899d6a8ef0/data/star_salmon/GBM1_DFCI4_S1_C4.markdup.sorted.bam"
-# ]
-samplesheet['sample_type'] = ['normal' if 'PBMC' in path else 'tumor' for path in samplesheet['filepath']]
-samplesheet['group_id'] = [re.split(r'[._]', path.split('/')[-1])[1] for path in samplesheet['filepath']]
+pd.set_option('display.max_columns', None)
+samplesheet = pd.DataFrame(columns=["group_id","subject_id","sample_id","sample_type","sequence_type","filetype","info","filepath"])
+samplesheet['filepath'] = ds.samplesheet['fastq_1'].astype(str) + ';' + ds.samplesheet['fastq_2'].astype(str)
+print(samplesheet)
+samplesheet['sample_id'] = [re.sub('_','.', sample_id) for sample_id in ds.samplesheet['sample'].astype(str)]
+samplesheet['group_id'] = [re.split(r'[._]', sample_id)[1] for sample_id in samplesheet['sample_id']]
 samplesheet['subject_id'] = samplesheet['group_id']
-samplesheet['sample_id'] = [re.split(r'[._]', path.split('/')[-1])[2] for path in samplesheet['filepath']]
+samplesheet['info'] = ['library_id:S' + str(i+1) + ';lane:' + str(i+1) for i in range(len(samplesheet))]
+print(samplesheet)
+samplesheet['sample_type'] = ['normal' if 'PBMC' in sample_id else 'tumor' for sample_id in samplesheet['sample_id']]
+samplesheet['filetype'] = ['fastq' for _ in samplesheet['filepath']]
+print(samplesheet)
 
-# this run specifically 
-samplesheet['filetype'] = ['cram' if 'cram' in path else 'bam' for path in samplesheet['filepath']]
-samplesheet['sequence_type'] = ['rna' if 'star_salmon' in path else 'dna' for path in samplesheet['filepath']]
+# this run specifically -- NOT ALWAYS TRUE
+samplesheet['sequence_type'] = ['dna' if 'merged' in path else 'rna' for path in samplesheet['filepath']]
+print(samplesheet)
 
 # add -RNA to sample id for rows that are rna
 samplesheet.loc[samplesheet['sequence_type'] == 'rna', 'sample_id'] = samplesheet['sample_id'] + '-RNA'
-
-pd.set_option('display.max_columns', None)
 print(samplesheet)
 
 samplesheet.to_csv('samplesheet.csv', index=False)
