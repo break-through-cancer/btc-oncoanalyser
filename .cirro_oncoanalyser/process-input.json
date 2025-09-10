@@ -1,5 +1,5 @@
 {
-  "out_dir": "$.dataset.dataPath",
+  "outdir": "$.dataset.dataPath",
   "mode": "$.dataset.params.mode",
   "genome": "$.dataset.params.genome",
   "dna_cram_path": "$.dataset.params.dna_cram_path",
