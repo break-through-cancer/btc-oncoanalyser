@@ -61,7 +61,4 @@ print(samplesheet)
 samplesheet.to_csv('samplesheet.csv', index=False)
 ds.add_param("input", "samplesheet.csv")
 
-for key in param_list:  # list() avoids modifying during iteration
-    ds.remove_param(key, force=True)
-
 ds.logger.info(ds.params)
